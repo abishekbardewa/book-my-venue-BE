@@ -6,7 +6,7 @@ export const config = {
 	API_VERSION_URL: '/api/v1',
 
 	SERVER: {
-		PORT: process.env.SERVER_PORT || 5050,
+		PORT: process.env.PORT || 5050,
 		ORIGINS: process.env.ORIGINS.split(','),
 	},
 	TOKEN: {
@@ -31,4 +31,3 @@ export const config = {
 		FROM_EMAIL: process.env.FROM_EMAIL,
 	}
 };
-

@@ -323,10 +323,44 @@ export const update = async (id, reqObj) => {
 };
 
 export const remove = async (id) => {
-  return await prisma.property.update({
+  const property = await prisma.property.findUnique({
     where: {
       id,
     },
-    data: { isDeleted: true },
+    include: {
+      bookings: {
+        where: {
+          OR: [
+            { bookingStatus: BookingStatus.AWAITING_OWNER_APPROVAL },
+            { bookingStatus: BookingStatus.CONFIRMED },
+          ],
+        },
+      },
+    },
   });
+
+  if (!property) {
+    throw new Error(`Property with id ${id} not found`);
+  }
+
+  const hasBookingsToExclude = property.bookings.some(
+    (booking) =>
+      booking.bookingStatus === BookingStatus.AWAITING_OWNER_APPROVAL ||
+      booking.bookingStatus === BookingStatus.CONFIRMED
+  );
+
+  if (!hasBookingsToExclude) {
+    return await prisma.property.update({
+      where: {
+        id,
+      },
+      data: {
+        isDeleted: true,
+      },
+    });
+  } else {
+    throw new Error(
+      'Property has bookings in AWAITING_OWNER_APPROVAL or CONFIRMED status.'
+    );
+  }
 };

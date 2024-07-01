@@ -32,10 +32,10 @@ export const getProperties = async (req, res) => {
     const result = await PropertyService.findMany(req.query);
     if (result) {
       return res.status(200).json({
-        message: 'success',
-        data: result,
+        data: result?.properties,
         status: 200,
         success: true,
+        ...result?.pagination,
       });
     }
     return res.status(409).json({
@@ -90,6 +90,21 @@ export const getPropertyById = async (req, res) => {
       success: true,
     });
   } catch (error) {
+    res.status(404).json({ msg: error.message });
+  }
+};
+export const getPropertyNameList = async (req, res) => {
+  try {
+    const propertyNames = await PropertyService.findPropertyNameList(req.query);
+
+    res.status(200).json({
+      message: 'success',
+      data: propertyNames,
+      status: 200,
+      success: true,
+    });
+  } catch (error) {
+    console.error('Error in PropertyController.searchProperties:', error);
     res.status(404).json({ msg: error.message });
   }
 };

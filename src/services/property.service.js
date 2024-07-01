@@ -145,8 +145,32 @@ export const findById = async (id) => {
     amenities: amenitiesNames,
   };
 };
+export const findPropertyNameList = async (filters) => {
+  const { city, search } = filters;
+  try {
+    const properties = await prisma.property.findMany({
+      where: {
+        city: city || undefined,
+        propertyName: {
+          contains: search,
+        },
+      },
+      select: {
+        propertyName: true,
+      },
+      take: 10,
+    });
 
-// get all propertie
+    return properties && properties?.length > 0
+      ? properties?.map((prop) => prop.propertyName)
+      : [];
+  } catch (error) {
+    console.error('Error in PropertyService.searchProperties:', error);
+    throw error;
+  }
+};
+
+// get all properties
 export const findMany = async (filters) => {
   const { city, search, propertyTags, page = 1, limit = 8 } = filters;
 
@@ -207,10 +231,9 @@ export const findMany = async (filters) => {
   return {
     properties,
     pagination: {
-      total: totalCount,
-      page: pageNumber,
-      limit: limitNumber,
-      pages: Math.ceil(totalCount / limitNumber),
+      totalCount,
+      page,
+      limit,
     },
   };
 };

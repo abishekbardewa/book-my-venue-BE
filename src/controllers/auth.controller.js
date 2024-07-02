@@ -16,7 +16,6 @@ export const loginOtp = async (req, res) => {
       message: 'OTP sent to your email',
       status: 200,
       success: true,
-      data: otpRecord,
     });
   } catch (error) {
     console.error('Error in loginOtp:', error);

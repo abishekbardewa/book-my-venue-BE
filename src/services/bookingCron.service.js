@@ -1,6 +1,5 @@
 import cron from 'node-cron';
-import { BookingService, PaymentService } from '.';
-import { BOOKING_STATUS } from '@/constants/status.constant';
+import { BookingService, UserService } from '.';
 
 // Cron job to delete bookings pending payment after 15 minutes
 cron.schedule('*/15 * * * *', async () => {
@@ -63,5 +62,16 @@ cron.schedule('0 * * * *', async () => {
     );
   } catch (error) {
     console.error('Error running cron job to update booking statuses:', error);
+  }
+});
+
+// Cron job to to delete expired OTP at 3 AM
+cron.schedule('0 3 * * *', async () => {
+  console.log('Running daily OTP cleanup job');
+  try {
+    const deletedCount = await UserService.deleteExpiredOtps();
+    console.log(`Deleted ${deletedCount} expired OTP records`);
+  } catch (error) {
+    console.error('Error in OTP cleanup job:', error);
   }
 });

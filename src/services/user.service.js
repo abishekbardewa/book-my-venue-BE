@@ -20,7 +20,7 @@ export const findByEmail = (email) => {
 
 // OTP Section
 export const createEmailInOtp = (email) => {
-  const expires = new Date();
+  const expires = new Date(Date.now() + 15 * 60 * 1000);
   return prisma.oTP.create({
     data: {
       email: email,
@@ -103,4 +103,42 @@ export const updatePassword = async (id, password) => {
     },
     data: { password },
   });
+};
+
+export const createOrUpdateOtp = async (email) => {
+  const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
+  let otp;
+
+  if (email.endsWith('@venue.com')) {
+    otp = '000000';
+  } else {
+    otp = Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  const existingOtp = await prisma.oTP.findUnique({
+    where: { email: email },
+  });
+
+  if (existingOtp) {
+    return prisma.oTP.update({
+      where: { email: email },
+      data: { otp, expires },
+    });
+  } else {
+    return prisma.oTP.create({
+      data: { email, otp, expires },
+    });
+  }
+};
+
+export const deleteExpiredOtps = async () => {
+  const currentTime = new Date();
+  const deletedRecords = await prisma.oTP.deleteMany({
+    where: {
+      expires: {
+        lt: currentTime,
+      },
+    },
+  });
+  return deletedRecords.count;
 };

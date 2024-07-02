@@ -2,72 +2,85 @@ import { config } from '@/config';
 import { UserService, JWTService, EmailService } from '@/services';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-
 export const loginOtp = async (req, res) => {
   const { email } = req.body;
 
-  const existingEmail = await UserService.findOtpEmail(email);
+  try {
+    const otpRecord = await UserService.createOrUpdateOtp(email);
 
-  if (!existingEmail) {
-    await UserService.createEmailInOtp(email);
-  }
-  let otp;
-  if (email.endsWith('@venue.com')) {
-    otp = '000000';
-  } else {
-    otp = Math.floor(100000 + Math.random() * 900000).toString();
-    EmailService.sendOTPEmail(email, otp);
-  }
+    if (!email.endsWith('@venue.com')) {
+      await EmailService.sendOTPEmail(email, otpRecord.otp);
+    }
 
-  await UserService.updateOtp(email, { otp: otp });
-
-  res.status(200).json({ message: 'OTP sent to your email' });
-};
-
-export const verifyOtp = async (req, res) => {
-  const { email, otp } = req.body;
-
-  const user = await UserService.findOtpEmail(email);
-
-  if (!user || user.otp !== otp) {
-    return res.status(400).json({ error: 'Invalid OTP' });
-  }
-
-  // Check if OTP has expired
-  const currentTime = new Date();
-  const expiryTime = new Date(user.expirytime);
-  if (currentTime > expiryTime) {
-    await UserService.removeEmailinOtp(email);
-    return res.status(400).json({ error: 'OTP has expired' });
-  }
-
-  const existingUser = await UserService.findByEmail(email);
-  console.log(existingUser);
-  if (!existingUser) {
-    await UserService.removeEmailinOtp(email);
-
-    return res.status(200).json({
-      message: 'success',
-      data: { email: email, isNewUser: true },
+    res.status(200).json({
+      message: 'OTP sent to your email',
       status: 200,
       success: true,
+      data: otpRecord,
     });
-  } else {
-    const accessToken = JWTService.generateAccessToken(existingUser);
-    const refreshToken = JWTService.generateRefreshToken(existingUser);
+  } catch (error) {
+    console.error('Error in loginOtp:', error);
+    res
+      .status(500)
+      .json({ message: 'Error sending OTP', error: error.message });
+  }
+};
+export const verifyOtp = async (req, res) => {
+  const { email, otp } = req.body;
+  try {
+    const otpRecord = await UserService.findOtpEmail(email);
 
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-    });
+    if (!otpRecord || otpRecord.otp !== otp) {
+      return res.status(400).json({
+        message: 'Invalid OTP',
+        status: 400,
+        success: false,
+      });
+    }
 
-    await UserService.removeEmailinOtp(email);
+    // Check if OTP has expired
+    const currentTime = new Date();
+    if (currentTime > otpRecord.expires) {
+      return res.status(400).json({
+        message: 'OTP has expired',
+        status: 400,
+        success: false,
+      });
+    }
 
-    return res.status(200).json({
-      message: 'Onboarding pending',
-      status: 200,
-      success: false,
-      data: { ...existingUser, accessToken },
-    });
+    const existingUser = await UserService.findByEmail(email);
+
+    if (!existingUser) {
+      await UserService.removeEmailinOtp(email);
+
+      return res.status(200).json({
+        message: 'success',
+        data: { email: email, isNewUser: true },
+        status: 200,
+        success: true,
+      });
+    } else {
+      const accessToken = JWTService.generateAccessToken(existingUser);
+      const refreshToken = JWTService.generateRefreshToken(existingUser);
+
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+      });
+
+      await UserService.removeEmailinOtp(email);
+
+      return res.status(200).json({
+        message: 'Onboarding pending',
+        status: 200,
+        success: false,
+        data: { ...existingUser, accessToken },
+      });
+    }
+  } catch (error) {
+    console.error('Error in verifyOtp:', error);
+    res
+      .status(500)
+      .json({ message: 'Error verifying OTP', error: error.message });
   }
 };
 

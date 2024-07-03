@@ -309,15 +309,15 @@ export const updateBookingStatus = async (
       const updatedBooking = await prisma.booking.update({
         where: { id: bookingId },
         data: { bookingStatus },
-        include:{
-          user:true,
-          property:{
-            include:{
-              owner:true
-            }
+        include: {
+          user: true,
+          property: {
+            include: {
+              owner: true,
+            },
           },
-          payments:true,
-        }
+          payments: true,
+        },
       });
 
       if (paymentStatus === PaymentStatus.REFUNDED) {
@@ -354,9 +354,9 @@ export const getExpiredBookings = async (cutoffTime) => {
     const expiredBookings = await prisma.booking.findMany({
       where: {
         bookingStatus: BookingStatus.PENDING,
-        // createdAt: {
-        //   lt: cutoffTime,
-        // },
+        createdAt: {
+          lt: cutoffTime,
+        },
       },
     });
     return expiredBookings;

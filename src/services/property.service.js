@@ -275,11 +275,16 @@ export const findManyById = async (id, filter) => {
     });
     const propertiesWithCanDelete = properties.map(
       ({ bookings, ...property }) => {
-        const canDelete = !bookings.some(
-          (booking) =>
-            booking.bookingStatus === BookingStatus.AWAITING_OWNER_APPROVAL ||
-            booking.bookingStatus === BookingStatus.CONFIRMED
-        );
+        let canDelete = true;
+
+        if (bookings.length > 0) {
+          canDelete = !bookings.some(
+            (booking) =>
+              booking.bookingStatus === BookingStatus.AWAITING_OWNER_APPROVAL ||
+              booking.bookingStatus === BookingStatus.CONFIRMED ||
+              BookingStatus.PENDING
+          );
+        }
 
         return {
           ...property,

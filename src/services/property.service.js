@@ -150,6 +150,7 @@ export const findPropertyNameList = async (filters) => {
   try {
     const properties = await prisma.property.findMany({
       where: {
+        isDeleted: false,
         city: city || undefined,
         propertyName: {
           contains: search,
@@ -184,6 +185,7 @@ export const findMany = async (filters) => {
   // Get total count for pagination metadata
   const totalCount = await prisma.property.count({
     where: {
+      isDeleted: false,
       city: city || undefined,
       propertyName: {
         contains: search || undefined,
@@ -202,6 +204,7 @@ export const findMany = async (filters) => {
 
   const properties = await prisma.property.findMany({
     where: {
+      isDeleted: false,
       city: city || undefined,
       propertyName: {
         contains: search || undefined,
@@ -246,12 +249,13 @@ export const findManyById = async (id, filter) => {
     const skip = (page - 1) * limit;
 
     const totalCount = await prisma.property.count({
-      where: { ownerId: id },
+      where: { ownerId: id, isDeleted: false },
     });
 
     const properties = await prisma.property.findMany({
-      where: { ownerId: id },
+      where: { ownerId: id, isDeleted: false },
       include: {
+        bookings: true,
         propertyImages: true,
         propertyTags: {
           select: {
@@ -269,8 +273,22 @@ export const findManyById = async (id, filter) => {
       skip,
       take: limit,
     });
+    const propertiesWithCanDelete = properties.map(
+      ({ bookings, ...property }) => {
+        const canDelete = !bookings.some(
+          (booking) =>
+            booking.bookingStatus === BookingStatus.AWAITING_OWNER_APPROVAL ||
+            booking.bookingStatus === BookingStatus.CONFIRMED
+        );
+
+        return {
+          ...property,
+          canDelete,
+        };
+      }
+    );
     return {
-      properties,
+      properties: propertiesWithCanDelete,
       pagination: {
         totalCount,
         page,

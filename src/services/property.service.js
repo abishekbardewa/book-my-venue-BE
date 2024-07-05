@@ -282,7 +282,7 @@ export const findManyById = async (id, filter) => {
             (booking) =>
               booking.bookingStatus === BookingStatus.AWAITING_OWNER_APPROVAL ||
               booking.bookingStatus === BookingStatus.CONFIRMED ||
-              BookingStatus.PENDING
+              booking.bookingStatus === BookingStatus.PENDING
           );
         }
 

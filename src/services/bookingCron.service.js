@@ -66,8 +66,8 @@ cron.schedule('0 * * * *', async () => {
 });
 
 // Cron job to to delete expired OTP at 3 AM
-// cron.schedule('0 3 * * *', async () => {
-cron.schedule('*/1 * * * * *', async () => {
+cron.schedule('0 3 * * *', async () => {
+  // cron.schedule('*/1 * * * * *', async () => {
   console.log('Running daily OTP cleanup job');
   try {
     const deletedCount = await UserService.deleteExpiredOtps();

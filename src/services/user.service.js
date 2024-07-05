@@ -133,12 +133,19 @@ export const createOrUpdateOtp = async (email) => {
 
 export const deleteExpiredOtps = async () => {
   const currentTime = new Date();
-  const deletedRecords = await prisma.oTP.deleteMany({
-    where: {
-      expires: {
-        lt: currentTime,
+  console.log('Current Time:', currentTime);
+  try {
+    const deletedRecords = await prisma.oTP.deleteMany({
+      where: {
+        expires: {
+          lt: currentTime,
+        },
       },
-    },
-  });
-  return deletedRecords.count;
+    });
+    console.log('Deleted Records:', deletedRecords);
+    return deletedRecords.count;
+  } catch (error) {
+    console.error('Error deleting expired OTPs:', error);
+  }
+  return 0;
 };
